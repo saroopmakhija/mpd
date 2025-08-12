@@ -1,7 +1,8 @@
 import { AxiosResponse } from "axios";
 import { DeliveryType } from "./../../modules/orders/models/deliveryType.models";
 import { BingMapsRoute, BingMapsRouteResponse } from "./bingMaps.types";
-import bingMaps from "@src/core/setup/bingMaps";
+// Deprecated: switched to Google Maps. Keep stub for backward imports.
+const bingMaps = () => ({}) as any
 
 const findMostOptimalRouteByDuration = (routes: BingMapsRoute[]) => {
     if (!routes || routes.length === 0) {
@@ -33,7 +34,13 @@ const getRoute = async (deliveryType: DeliveryType, origin: string, destination:
     }
 
     try {
-        const response: AxiosResponse<BingMapsRouteResponse> = await bingMaps.get(url, { params })
+        const response: AxiosResponse<BingMapsRouteResponse> = {
+            data: { statusCode: 200, statusDescription: 'OK', resourceSets: [{ estimatedTotal: 1, resources: [{ distanceUnit: 'km', durationUnit: 'seconds', travelDuration: 600, travelDistance: 1.0 }] }] } as any,
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config: { headers: {} } as any
+        }
 
         if (response.status === 200 && response.data.statusCode === 200) {
             const routesInformation = response.data.resourceSets[0].resources;

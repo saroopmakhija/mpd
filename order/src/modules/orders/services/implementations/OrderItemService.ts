@@ -19,7 +19,7 @@ import { PriceInformationModel, PriceInformationUpdateInput } from "../../models
 import { OrderUpdateOutputDto } from "../../dto/order.dto";
 import { IOrderUpdateMapper } from "../../mappers/interfaces/order.mappers";
 import { OrderModel } from "../../models/order.models";
-import stripe from "@src/core/setup/stripe";
+// Stripe removed; Razorpay order totals are not updated dynamically in this flow.
 import { PaymentInformationModel } from "../../models/paymentInformation.models";
 
 
@@ -151,12 +151,7 @@ export class OrderItemService extends BaseService implements IOrderItemService {
         const priceInformationUpdated = await this.priceInformationRepository.update(priceInformation.id, priceInformationUpdateInput) as PriceInformationModel
 
         
-        // Update payment intent
-        const paymentInformation = orderInstance.paymentInformation as PaymentInformationModel
-
-        await stripe.paymentIntents.update(paymentInformation.paymentIntentId, { 
-            amount: Math.trunc(priceInformationUpdated.totalPrice * 100)
-        })
+        // Skipping payment adjustment: handled at reservation time with Razorpay
 
         orderInstance.items = orderItems
         orderInstance.priceInformation = priceInformationUpdated

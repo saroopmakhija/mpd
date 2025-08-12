@@ -1,4 +1,4 @@
-import { Coordinates } from "@src/api/bingMaps/bingMaps.types";
+import { Coordinates } from "@src/api/googleMaps/getCoordinates";
 
 const getAcrossDistance = (point1: Coordinates, point2: Coordinates): number => {
     const toRadians = (degrees: number) => degrees * (Math.PI / 180);

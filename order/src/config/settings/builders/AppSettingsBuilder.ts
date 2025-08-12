@@ -45,8 +45,8 @@ export class AppSettingsBuilder implements ISettingsBuilder {
                     ]
                 }
             ],
-            "bingApiKey": EnvManager.getVariable("BING_API_KEY"),
-            "stripeSecretKey": EnvManager.getVariable("STRIPE_SECRET_KEY"),
+            "bingApiKey": EnvManager.getVariable("GOOGLE_MAPS_API_KEY"),
+            "stripeSecretKey": EnvManager.getVariable("RAZORPAY_KEY_SECRET"),
         })
     }
 }

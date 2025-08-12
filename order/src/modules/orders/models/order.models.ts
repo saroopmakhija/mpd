@@ -9,13 +9,20 @@ export type OrderModel = {
     customerId: bigint
     courierId?: bigint | null
     restaurantId: bigint
-    deliveryInformationId: bigint
+    deliveryInformationId: bigint | null
     priceInformationId: bigint
     paymentInformationId: bigint
     status: OrderStatus
     createdAt: Date
+    // Surprise bag / pickup fields
+    offerId?: bigint | null
+    pickupCode?: string | null
+    pickupWindowStart?: Date | null
+    pickupWindowEnd?: Date | null
+    collectedAt?: Date | null
+    // Existing relations
     items?: OrderItemModel[]
-    deliveryInformation?: DeliveryInformationModel
+    deliveryInformation?: DeliveryInformationModel | null
     priceInformation?: PriceInformationModel
     paymentInformation?: PaymentInformationModel
 }
@@ -40,7 +47,7 @@ export type OrderUpdateInput = {
     customerId?: bigint
     courierId?: bigint | null
     restaurantId?: bigint
-    deliveryInformationId?: bigint
+    deliveryInformationId?: bigint | null
     priceInformationId?: bigint
     paymentInformationId?: bigint
     status?: OrderStatus

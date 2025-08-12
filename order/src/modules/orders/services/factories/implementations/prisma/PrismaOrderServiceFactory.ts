@@ -16,6 +16,7 @@ import IPromotionRepositoryFactory from "@src/modules/promotions/repositories/fa
 import PrismaPromotionRepositoryFactory from "@src/modules/promotions/repositories/factories/implementations/prisma/PrismaPromotionRepositoryFactory"
 import ICustomerAddressRepositoryFactory from "@src/modules/addresses/repositories/factories/interfaces/ICustomerAddressRepositoryFactory"
 import PrismaCustomerAddressRepositoryFactory from "@src/modules/addresses/repositories/factories/implementations/prisma/PrismaCustomerAddressRepositoryFactory"
+import PrismaSurpriseBagOfferRepository from "@src/modules/orders/repositories/implementations/prisma/PrismaSurpriseBagOfferRepository"
 
 export default class PrismaOrderServiceFactory implements IOrderServiceFactory {
     protected orderMapperFactory: IOrderMapperFactory = new OrderMapperFactory()
@@ -52,7 +53,8 @@ export default class PrismaOrderServiceFactory implements IOrderServiceFactory {
             this.restaurantRepositoryFactory.createRestaurantRepository(),
             this.restaurantRepositoryFactory.createWorkingHoursRepository(),
             this.bingApiKey,
-            this.stripeSecretKey
+            this.stripeSecretKey,
+            new PrismaSurpriseBagOfferRepository((this.orderRepositoryFactory as any).prisma)
         )
     }
     

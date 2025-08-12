@@ -1,6 +1,9 @@
 import { asyncHandler } from "@src/core/utils/asyncHandler";
 import { Request, Response, Router } from "express";
 import { cancelOrder, confirmOrder, finishOrderDelivery, getAllOrders, getAvailableForDeliveryOrders, getCurrentCourierOrders, getCurrentCustomerOrders, getOrder, makeOrder, placeOrder, prepareOrder, takeOrder, updateOrder } from "../controllers/order.controllers";
+import OrderService from "../services/implementations/OrderService";
+import PrismaOrderServiceFactory from "../services/factories/implementations/prisma/PrismaOrderServiceFactory";
+import { PrismaClient } from "@prisma/client";
 import { addOrderItem, getOrderItems, removeOrderItem, updateOrderItem } from "../controllers/orderItem.controllers";
 
 
@@ -431,3 +434,36 @@ orderRouter.patch("/:orderId/take", asyncHandler(takeOrder))
  *         description: Order not found.
 */
 orderRouter.patch("/:orderId/finish", asyncHandler(finishOrderDelivery))
+
+// Reservation endpoints
+orderRouter.post("/reserve/:offerId", asyncHandler(async (req, res) => {
+  const prisma = new PrismaClient()
+  const factory = new PrismaOrderServiceFactory(prisma, process.env.GOOGLE_MAPS_API_KEY as string, process.env.RAZORPAY_KEY_SECRET as string)
+  const service = factory.createOrderService() as unknown as OrderService
+  const quantity = Number(req.body?.quantity ?? 1)
+  const offerId = BigInt(req.params.offerId)
+  // @ts-ignore
+  const dto = await service.reserveOffer(offerId, quantity)
+  res.status(201).json(dto)
+}))
+
+orderRouter.post("/:orderId/cancel-reservation", asyncHandler(async (req, res) => {
+  const prisma = new PrismaClient()
+  const factory = new PrismaOrderServiceFactory(prisma, process.env.GOOGLE_MAPS_API_KEY as string, process.env.RAZORPAY_KEY_SECRET as string)
+  const service = factory.createOrderService() as unknown as OrderService
+  const orderId = BigInt(req.params.orderId)
+  // @ts-ignore
+  const dto = await service.cancelReservation(orderId)
+  res.status(200).json(dto)
+}))
+
+orderRouter.post("/:orderId/collect", asyncHandler(async (req, res) => {
+  const prisma = new PrismaClient()
+  const factory = new PrismaOrderServiceFactory(prisma, process.env.GOOGLE_MAPS_API_KEY as string, process.env.RAZORPAY_KEY_SECRET as string)
+  const service = factory.createOrderService() as unknown as OrderService
+  const orderId = BigInt(req.params.orderId)
+  const { pickupCode } = req.body
+  // @ts-ignore
+  const dto = await service.collectReservation(orderId, pickupCode)
+  res.status(200).json(dto)
+}))

@@ -5,3 +5,4 @@ export type OrderItemDelegate = Prisma.OrderItemDelegate
 export type DeliveryInformationDelegate = Prisma.DeliveryInformationDelegate
 export type PriceInformationDelegate = Prisma.PriceInformationDelegate
 export type PaymentInformationDelegate = Prisma.PaymentInformationDelegate
+export type SurpriseBagOfferDelegate = Prisma.SurpriseBagOfferDelegate

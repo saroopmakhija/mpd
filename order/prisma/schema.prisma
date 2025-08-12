@@ -76,6 +76,15 @@ model Restaurant {
   menuItem     MenuItem[]
   promocodes   Promocode[]
   workingHours WorkingHours[]
+  offers       SurpriseBagOffer[]
+
+  // Geo and locale fields for local discovery in India (backward-compatible additions)
+  latitude   Float?   @map("latitude")
+  longitude  Float?   @map("longitude")
+  city       String?  @map("city")
+  state      String?  @map("state")
+  pincode    String?  @map("pincode")
+  country    String?  @map("country")
 
   @@map("restaurants")
 }
@@ -106,6 +115,42 @@ model MenuItem {
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 
   @@map("menu_items")
+}
+
+/// Surprise bag style offers for pickup (Too Good To Go domain)
+model SurpriseBagOffer {
+  id          BigInt   @id @default(autoincrement())
+  restaurantId BigInt  @map("restaurant_id")
+
+  title        String   @map("title")
+  description  String?  @map("description")
+  imageUrl     String?  @map("image_url")
+
+  // Pricing: original estimated value and discounted offer price
+  originalValue Float   @map("original_value")
+  price         Float   @map("price")
+
+  // Inventory
+  quantityTotal     Int   @map("quantity_total")
+  quantityAvailable Int   @map("quantity_available")
+
+  // Pickup window for the day
+  pickupWindowStart DateTime @map("pickup_window_start") @db.Timestamptz()
+  pickupWindowEnd   DateTime @map("pickup_window_end") @db.Timestamptz()
+
+  // Operational flags
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Dietary/cuisine hints (optional, for filtering)
+  isVegetarian Boolean? @map("is_vegetarian")
+  cuisine      String?  @map("cuisine")
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  orders     Order[]
+
+  @@map("surprise_bag_offers")
 }
 
 model OrderItem {
@@ -141,10 +186,12 @@ model DeliveryInformation {
 
 model PriceInformation {
   id                BigInt  @id @default(autoincrement())
+  // For surprise bags, this equals offer.price * quantity
   orderItemsPrice   Float   @map("order_items_price")
   promocodeName     String? @map("promocode_name")
   promocodeDiscount Int?    @map("promocode_discount")
   decountedPrice    Float   @map("decounted_price")
+  // Not used in pickup flow but left for backward compatibility
   deliveryPrice     Float?  @map("delivery_price")
   totalPrice        Float   @map("total_price")
   order             Order?
@@ -162,20 +209,28 @@ model Order {
   customerId            BigInt      @map("customer_id")
   courierId             BigInt?     @map("courier_id")
   restaurantId          BigInt      @map("restaurant_id")
-  deliveryInformationId BigInt      @unique @map("delivery_information_id")
+  deliveryInformationId BigInt?     @unique @map("delivery_information_id")
   priceInformationId    BigInt      @unique @map("price_information_id")
   paymentInformationId  BigInt      @unique @map("payment_information_id")
   status                OrderStatus @default(PLACING)
   createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz()
 
+  // Surprise Bag specific fields
+  offerId      BigInt?   @map("offer_id")
+  pickupCode   String?   @map("pickup_code")
+  pickupWindowStart DateTime? @map("pickup_window_start") @db.Timestamptz()
+  pickupWindowEnd   DateTime? @map("pickup_window_end") @db.Timestamptz()
+  collectedAt  DateTime? @map("collected_at") @db.Timestamptz()
+
   customer            Customer            @relation(fields: [customerId], references: [id])
   courier             Courier?            @relation(fields: [courierId], references: [id])
   restaurant          Restaurant          @relation(fields: [restaurantId], references: [id])
-  deliveryInformation DeliveryInformation @relation(fields: [deliveryInformationId], references: [id])
+  deliveryInformation DeliveryInformation? @relation(fields: [deliveryInformationId], references: [id])
   priceInformation    PriceInformation    @relation(fields: [priceInformationId], references: [id])
   paymentInformation PaymentInformation  @relation(fields: [paymentInformationId], references: [id])
   items               OrderItem[]
   promotionId         BigInt?
+  offer               SurpriseBagOffer?  @relation(fields: [offerId], references: [id])
 
   @@map("orders")
 }
@@ -188,6 +243,11 @@ enum OrderStatus {
   DELIVERING
   DELIVERED
   CANCELLED
+
+  // Pickup flow statuses
+  RESERVED
+  COLLECTED
+  EXPIRED
 
   @@map("order_statuses")
 }
