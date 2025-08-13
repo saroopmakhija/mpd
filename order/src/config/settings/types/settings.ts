@@ -36,8 +36,13 @@ export type AppSettingsOptions = {
     kafkaConsumerTopicsEvents: KafkaConsumerTopicEvent[]
     kafkaProducerEventsTopics: KafkaProducerEventTopics[]
 
-    bingApiKey: string
-    stripeSecretKey: string
+    // Google Maps API (replaced Bing Maps)
+    googleMapsApiKey: string
+    
+    // Razorpay payment gateway (for Indian market)
+    razorpayKeyId: string
+    razorpayKeySecret: string
+    razorpayWebhookSecret: string
 } & BaseSettingsOptions
 
 export type ServerSettingsOptions = {
