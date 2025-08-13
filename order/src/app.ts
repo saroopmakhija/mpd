@@ -8,6 +8,8 @@ import { initProducerEventsTopics } from "./core/setup/kafka/publisher";
 import appSettings from "./core/setup/settings/appSettings";
 import serverSettings from "./core/setup/settings/serverSettings";
 import { registerCors } from "./core/setup/cors";
+import { PrismaClient } from "@prisma/client";
+import { startSchedulers } from "./core/setup/scheduler";
 
 const app = getExpressApp()
 
@@ -20,6 +22,9 @@ async function main() {
     registerAppRoutes(app)
     registerSwagger(app)
     registerErrorResponders(app)
+
+    // Start schedulers
+    startSchedulers(new PrismaClient())
 
     startExpressApp(app, serverSettings)
 }

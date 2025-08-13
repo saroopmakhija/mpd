@@ -1,6 +1,6 @@
 import { asyncHandler } from "@src/core/utils/asyncHandler";
 import { Request, Response, Router } from "express";
-import { cancelOrder, confirmOrder, finishOrderDelivery, getAllOrders, getAvailableForDeliveryOrders, getCurrentCourierOrders, getCurrentCustomerOrders, getOrder, makeOrder, placeOrder, prepareOrder, takeOrder, updateOrder } from "../controllers/order.controllers";
+import { cancelOrder, confirmOrder, finishOrderDelivery, getAllOrders, getAvailableForDeliveryOrders, getCurrentCourierOrders, getCurrentCustomerOrders, getOrder, makeOrder, placeOrder, prepareOrder, takeOrder, updateOrder, reserveOffer, cancelReservation, collectReservation } from "../controllers/order.controllers";
 import OrderService from "../services/implementations/OrderService";
 import PrismaOrderServiceFactory from "../services/factories/implementations/prisma/PrismaOrderServiceFactory";
 import { PrismaClient } from "@prisma/client";
@@ -434,6 +434,11 @@ orderRouter.patch("/:orderId/take", asyncHandler(takeOrder))
  *         description: Order not found.
 */
 orderRouter.patch("/:orderId/finish", asyncHandler(finishOrderDelivery))
+
+// Reservation endpoints
+orderRouter.post("/reserve/:offerId", asyncHandler(reserveOffer))
+orderRouter.post("/:orderId/cancel-reservation", asyncHandler(cancelReservation))
+orderRouter.post("/:orderId/collect", asyncHandler(collectReservation))
 
 // Reservation endpoints
 orderRouter.post("/reserve/:offerId", asyncHandler(async (req, res) => {

@@ -6,6 +6,7 @@ import { idValidator } from '@src/core/validators/idValidator';
 import { authenticateWithPrisma } from '@src/modules/authentication/utils/prisma/auhenticateWithPrisma';
 import { deliveryTypeValidator } from '../validators/deliveryType.validators';
 import appSettings from '@src/core/setup/settings/appSettings';
+import { z } from 'zod';
 
 export const makeOrder = async (req: Request, res: Response) => {
     const prismaClient = getPrismaClient()
@@ -201,5 +202,52 @@ export const finishOrderDelivery = async (req: Request, res: Response) => {
     await orderService.finishOrderDelivery(orderId)
     
     res.status(200).json({})
+}
+
+export const reserveOffer = async (req: Request, res: Response) => {
+    const prismaClient = getPrismaClient()
+
+    const offerId = idValidator.parse(req.params.offerId)
+    const quantity = z.number().min(1).default(1).parse(Number(req.body?.quantity ?? 1))
+
+    const orderServiceFactory = new PrismaOrderServiceFactory(prismaClient, appSettings.variables.bingApiKey, appSettings.variables.stripeSecretKey)
+    const orderService = orderServiceFactory.createOrderService()
+
+    await authenticateWithPrisma(req, prismaClient, orderService)
+
+    // @ts-ignore
+    const dto = await (orderService as any).reserveOffer(offerId, quantity)
+    res.status(201).json(dto)
+}
+
+export const cancelReservation = async (req: Request, res: Response) => {
+    const prismaClient = getPrismaClient()
+
+    const orderId = idValidator.parse(req.params.orderId)
+
+    const orderServiceFactory = new PrismaOrderServiceFactory(prismaClient, appSettings.variables.bingApiKey, appSettings.variables.stripeSecretKey)
+    const orderService = orderServiceFactory.createOrderService()
+
+    await authenticateWithPrisma(req, prismaClient, orderService)
+
+    // @ts-ignore
+    const dto = await (orderService as any).cancelReservation(orderId)
+    res.status(200).json(dto)
+}
+
+export const collectReservation = async (req: Request, res: Response) => {
+    const prismaClient = getPrismaClient()
+
+    const orderId = idValidator.parse(req.params.orderId)
+    const pickupCode = z.string().min(4).parse(req.body?.pickupCode)
+
+    const orderServiceFactory = new PrismaOrderServiceFactory(prismaClient, appSettings.variables.bingApiKey, appSettings.variables.stripeSecretKey)
+    const orderService = orderServiceFactory.createOrderService()
+
+    await authenticateWithPrisma(req, prismaClient, orderService)
+
+    // @ts-ignore
+    const dto = await (orderService as any).collectReservation(orderId, pickupCode)
+    res.status(200).json(dto)
 }
 

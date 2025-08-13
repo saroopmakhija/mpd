@@ -4,6 +4,7 @@ import { promocodeRouter } from "@src/modules/promotions/routes/promocode.routes
 import { restaurantRouter } from "@src/modules/restaurants/routes/restaurant.routes";
 import { customerRouter } from "@src/modules/users/routes/customer.routes";
 import { Router } from "express";
+import { razorpayRouter } from "@src/core/setup/razorpayWebhook";
 import buildOfferRoutes from "@src/modules/orders/routes/offer.routes";
 import OfferService from "@src/modules/orders/services/implementations/OfferService";
 import PrismaSurpriseBagOfferRepository from "@src/modules/orders/repositories/implementations/prisma/PrismaSurpriseBagOfferRepository";
@@ -21,6 +22,7 @@ apiRouter.use("/restaurants", restaurantRouter)
 apiRouter.use("/customers", customerRouter)
 
 apiRouter.use("/addresses", addressRouter)
+apiRouter.use("/webhooks/razorpay", razorpayRouter)
 
 // Offers endpoints
 const prisma = getPrismaClient()
