@@ -16,13 +16,12 @@ model Customer {
   @@map("customers")
 }
 
-model Courier {
-  id BigInt @id
-
-  orders Order[]
-
-  @@map("couriers")
-}
+// Courier model removed - MealPeDeal is pickup-only
+// model Courier {
+//   id BigInt @id
+//   orders Order[]
+//   @@map("couriers")
+// }
 
 model Moderator {
   id BigInt @id
@@ -78,7 +77,7 @@ model Restaurant {
   workingHours WorkingHours[]
   offers       SurpriseBagOffer[]
 
-  // Geo and locale fields for local discovery in India (backward-compatible additions)
+  // Geo and locale fields for local discovery in India
   latitude   Float?   @map("latitude")
   longitude  Float?   @map("longitude")
   city       String?  @map("city")
@@ -86,6 +85,17 @@ model Restaurant {
   pincode    String?  @map("pincode")
   country    String?  @map("country")
 
+  // MealPeDeal pickup-specific fields for Indian market
+  pickupInstructions  String?  @map("pickup_instructions") // How customers should collect bags
+  contactPhone        String?  @map("contact_phone")       // Restaurant contact for pickup coordination
+  pickupCounterInfo   String?  @map("pickup_counter_info") // Where to collect (counter, entrance, etc.)
+  mysteryBagEnabled   Boolean  @default(true) @map("mystery_bag_enabled") // Restaurant participates in mystery bags
+  averagePickupTime   Int?     @map("average_pickup_time") // Average time in minutes for pickup
+  
+  // Indian market compliance
+  gstNumber          String?  @map("gst_number")          // GST registration number
+  fssaiLicense       String?  @map("fssai_license")       // FSSAI food license
+  
   @@map("restaurants")
 }
 
@@ -117,7 +127,7 @@ model MenuItem {
   @@map("menu_items")
 }
 
-/// Surprise bag style offers for pickup (Too Good To Go domain)
+/// Mystery bag offers for pickup (MealPeDeal - Too Good To Go for India)
 model SurpriseBagOffer {
   id          BigInt   @id @default(autoincrement())
   restaurantId BigInt  @map("restaurant_id")
@@ -143,10 +153,22 @@ model SurpriseBagOffer {
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  // Dietary/cuisine hints (optional, for filtering)
-  isVegetarian Boolean? @map("is_vegetarian")
-  cuisine      String?  @map("cuisine")
-
+  // Indian market specific dietary requirements
+  isVegetarian    Boolean? @map("is_vegetarian")     // Critical for Indian customers
+  isJain          Boolean? @map("is_jain")           // Jain dietary requirements (no root vegetables)
+  isVegan         Boolean? @map("is_vegan")          // Growing vegan community in India
+  containsAlcohol Boolean? @map("contains_alcohol")  // For legal compliance in some Indian states
+  
+  // Indian cuisine and preferences
+  cuisine      String?  @map("cuisine")              // Indian, Chinese, Italian, etc.
+  spiceLevel   String?  @map("spice_level")          // MILD, MEDIUM, SPICY
+  foodCategory String?  @map("food_category")        // BREAKFAST, LUNCH, DINNER, SNACKS, SWEETS, BEVERAGES
+  
+  // Additional metadata for Indian market
+  discountPercentage Int?     @map("discount_percentage")  // Calculated discount % for marketing
+  preparationTime    Int?     @map("preparation_time")     // Minutes - for customer expectations
+  allergens          String?  @map("allergens")            // Comma separated list of allergens
+  
   restaurant Restaurant @relation(fields: [restaurantId], references: [id])
   orders     Order[]
 
@@ -167,22 +189,20 @@ model OrderItem {
   @@map("order_items")
 }
 
-model DeliveryInformation {
-  id                   BigInt        @id @default(autoincrement())
-  deliveryType         DeliveryType? @map("delivery_type")
-  deliveryDistance     Float?        @map("delivery_distance")
-  supposedDeliveryTime Int?          @map("supposed_delivery_time")
-
-  originAddress      String  @map("origin_address")
-  destinationAddress String? @map("destination_address")
-
-  deliveryAcceptedAt DateTime? @map("delivery_accepted_at") @db.Timestamptz()
-  actualDeliveryTime Int?      @map("actual_delivery_time")
-  deliveryFinishedAt DateTime? @map("delivery_finished_at") @db.Timestamptz()
-  order              Order?
-
-  @@map("deliveries_information")
-}
+// DeliveryInformation model removed - MealPeDeal is pickup-only
+// model DeliveryInformation {
+//   id                   BigInt        @id @default(autoincrement())
+//   deliveryType         DeliveryType? @map("delivery_type")
+//   deliveryDistance     Float?        @map("delivery_distance")
+//   supposedDeliveryTime Int?          @map("supposed_delivery_time")
+//   originAddress      String  @map("origin_address")
+//   destinationAddress String? @map("destination_address")
+//   deliveryAcceptedAt DateTime? @map("delivery_accepted_at") @db.Timestamptz()
+//   actualDeliveryTime Int?      @map("actual_delivery_time")
+//   deliveryFinishedAt DateTime? @map("delivery_finished_at") @db.Timestamptz()
+//   order              Order?
+//   @@map("deliveries_information")
+// }
 
 model PriceInformation {
   id                BigInt  @id @default(autoincrement())
@@ -191,8 +211,8 @@ model PriceInformation {
   promocodeName     String? @map("promocode_name")
   promocodeDiscount Int?    @map("promocode_discount")
   decountedPrice    Float   @map("decounted_price")
-  // Not used in pickup flow but left for backward compatibility
-  deliveryPrice     Float?  @map("delivery_price")
+  // Delivery price removed - MealPeDeal is pickup-only
+  // deliveryPrice     Float?  @map("delivery_price")
   totalPrice        Float   @map("total_price")
   order             Order?
 }
@@ -207,25 +227,34 @@ model PaymentInformation {
 model Order {
   id                    BigInt      @id @default(autoincrement())
   customerId            BigInt      @map("customer_id")
-  courierId             BigInt?     @map("courier_id")
+  // courierId removed - MealPeDeal is pickup-only
+  // courierId             BigInt?     @map("courier_id")
   restaurantId          BigInt      @map("restaurant_id")
-  deliveryInformationId BigInt?     @unique @map("delivery_information_id")
+  // deliveryInformationId removed - MealPeDeal is pickup-only
+  // deliveryInformationId BigInt?     @unique @map("delivery_information_id")
   priceInformationId    BigInt      @unique @map("price_information_id")
   paymentInformationId  BigInt      @unique @map("payment_information_id")
   status                OrderStatus @default(PLACING)
   createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz()
 
-  // Surprise Bag specific fields
-  offerId      BigInt?   @map("offer_id")
-  pickupCode   String?   @map("pickup_code")
+  // Mystery Bag specific fields (core to MealPeDeal)
+  offerId           BigInt?   @map("offer_id")
+  pickupCode        String?   @map("pickup_code")
   pickupWindowStart DateTime? @map("pickup_window_start") @db.Timestamptz()
   pickupWindowEnd   DateTime? @map("pickup_window_end") @db.Timestamptz()
-  collectedAt  DateTime? @map("collected_at") @db.Timestamptz()
+  collectedAt       DateTime? @map("collected_at") @db.Timestamptz()
+  
+  // Additional pickup fields for Indian market
+  pickupInstructions String? @map("pickup_instructions") // Restaurant-specific pickup instructions
+  customerPhone      String? @map("customer_phone")      // For pickup verification
+  restaurantNotes    String? @map("restaurant_notes")    // Special instructions from restaurant
 
   customer            Customer            @relation(fields: [customerId], references: [id])
-  courier             Courier?            @relation(fields: [courierId], references: [id])
+  // courier removed - MealPeDeal is pickup-only
+  // courier             Courier?            @relation(fields: [courierId], references: [id])
   restaurant          Restaurant          @relation(fields: [restaurantId], references: [id])
-  deliveryInformation DeliveryInformation? @relation(fields: [deliveryInformationId], references: [id])
+  // deliveryInformation removed - MealPeDeal is pickup-only
+  // deliveryInformation DeliveryInformation? @relation(fields: [deliveryInformationId], references: [id])
   priceInformation    PriceInformation    @relation(fields: [priceInformationId], references: [id])
   paymentInformation PaymentInformation  @relation(fields: [paymentInformationId], references: [id])
   items               OrderItem[]
@@ -240,24 +269,25 @@ enum OrderStatus {
   PENDING
   PREPARING
   READY
-  DELIVERING
-  DELIVERED
+  // DELIVERING removed - MealPeDeal is pickup-only
+  // DELIVERED removed - replaced with COLLECTED
   CANCELLED
 
-  // Pickup flow statuses
-  RESERVED
-  COLLECTED
-  EXPIRED
+  // Pickup flow statuses (core to MealPeDeal)
+  RESERVED    // Customer paid and reserved mystery bag
+  COLLECTED   // Customer picked up the mystery bag
+  EXPIRED     // Pickup window expired, customer didn't show up
+  NO_SHOW     // Customer didn't show up for pickup
 
   @@map("order_statuses")
 }
 
-enum DeliveryType {
-  WALKING
-  DRIVING
-
-  @@map("delivery_types")
-}
+// DeliveryType enum removed - MealPeDeal is pickup-only
+// enum DeliveryType {
+//   WALKING
+//   DRIVING
+//   @@map("delivery_types")
+// }
 
 enum CustomerAddressApprovalStatus {
   PENDING

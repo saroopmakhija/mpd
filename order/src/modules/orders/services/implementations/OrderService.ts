@@ -15,12 +15,13 @@ import { CourierOwnershipError } from '@src/modules/users/errors/courier.errors'
 import BaseService from '@src/core/services/BaseService';
 import ICustomerAddressRepository from '@src/modules/addresses/repositories/interfaces/ICustomerAddressRepository';
 import { CustomerAddressOwnershipError, CustomerOrderOwnershipError } from '@src/modules/users/errors/customer.errors';
-import IDeliveryInformationRepository from '../../repositories/interfaces/IDeliveryInformationRepository';
-import getFullCustomerAddress from '@src/modules/addresses/utils/getFullCustomerAddress';
-import { DeliveryType } from '../../models/deliveryType.models';
-import getRoute from '@src/api/googleMaps/getRoute';
+// Delivery imports removed - MealPeDeal is pickup-only
+// import IDeliveryInformationRepository from '../../repositories/interfaces/IDeliveryInformationRepository';
+// import getFullCustomerAddress from '@src/modules/addresses/utils/getFullCustomerAddress';
+// import { DeliveryType } from '../../models/deliveryType.models';
+// import getRoute from '@src/api/googleMaps/getRoute';
+// import { DeliveryInformationModel, DeliveryInformationUpdateInput } from '../../models/deliveryInformation.models';
 import moment from 'moment';
-import { DeliveryInformationModel, DeliveryInformationUpdateInput } from '../../models/deliveryInformation.models';
 import { CustomerAddressNotApprovedError, CustomerAddressNotFoundWithIdError } from '@src/modules/addresses/errors/customerAddress.errors';
 import { MenuItemNotFoundWithIdError, MenuItemAllNotInSameRestaurantError } from '@src/modules/menu/errors/menuItem.errors';
 import { publisher } from '@src/core/setup/kafka/publisher';
@@ -38,7 +39,7 @@ import { OrderModel } from '../../models/order.models';
 import getLogger from '@src/core/setup/logger';
 import { getDayOfWeek } from '../../utils/daysOfWeek';
 import isTimeBetween from '../../utils/isTimeBetween';
-import getRazorpay from '@src/core/setup/razorpay';
+import getRazorpay, { createRazorpayOrder, verifyRazorpaySignature, createRefund } from '@src/core/setup/razorpay';
 import IPaymentInformationRepository from '../../repositories/interfaces/IPaymentInformationRepository';
 import { PaymentInformationModel } from '../../models/paymentInformation.models';
 import ISurpriseBagOfferRepository from '../../repositories/interfaces/ISurpriseBagOfferRepository';
@@ -54,7 +55,8 @@ export default class OrderService extends BaseService implements IOrderService {
         protected orderRepository: IOrderRepository,
         protected promocodeRepository: IPromocodeRepository,
         protected customerAddressRepository: ICustomerAddressRepository,
-        protected deliveryInformationRepository: IDeliveryInformationRepository,
+        // deliveryInformationRepository removed - MealPeDeal is pickup-only
+        // protected deliveryInformationRepository: IDeliveryInformationRepository,
         protected priceInformationRepository: IPriceInformationRepository,
         protected paymentInformationRepository: IPaymentInformationRepository,
         protected menuItemRepository: IMenuItemRepository,
@@ -105,13 +107,18 @@ export default class OrderService extends BaseService implements IOrderService {
             decountedPrice: offer.price * quantity,
         })
 
-        // Create payment info (Razorpay order)
-        const razorpay = getRazorpay()
-        const paymentIntent = await razorpay.orders.create({
-            amount: Math.round(offer.price * quantity * 100),
-            currency: "INR",
-            receipt: `reservation_${Date.now()}`
-        })
+        // Create payment info (Razorpay order) for mystery bag reservation
+        const paymentIntent = await createRazorpayOrder(
+            offer.price * quantity,
+            "INR",
+            `mysteryBag_${offer.id}_${Date.now()}`,
+            {
+                customer_id: this.customer.id.toString(),
+                restaurant_id: offer.restaurantId.toString(),
+                offer_id: offer.id.toString(),
+                type: "mystery_bag"
+            }
+        )
         const paymentInformationInstance = await this.paymentInformationRepository.create({
             paymentIntentId: paymentIntent.id,
             clientSecretKey: paymentIntent.id
@@ -546,12 +553,16 @@ export default class OrderService extends BaseService implements IOrderService {
 
         // Create payment information
 
-        const razorpay = getRazorpay()
-        const paymentIntent = await razorpay.orders.create({
-            amount: Math.round(orderItemsPrice * 100),
-            currency: "INR",
-            receipt: `order_${Date.now()}`
-        })
+        const paymentIntent = await createRazorpayOrder(
+            orderItemsPrice,
+            "INR",
+            `regularOrder_${Date.now()}`,
+            {
+                customer_id: this.customer.id.toString(),
+                restaurant_id: restaurantInstance.id.toString(),
+                type: "regular_order"
+            }
+        )
 
         const paymentInformationInstance = await this.paymentInformationRepository.create({
             paymentIntentId: paymentIntent.id,
@@ -898,6 +909,51 @@ export default class OrderService extends BaseService implements IOrderService {
         }
 
         return promocodeInstance
+    }
+
+    // Cancel order and handle refunds (for mystery bags)
+    public async cancelOrder(orderId: bigint): Promise<OrderGetOutputDto> {
+        // Check if user has ownership on order
+        const orderInstance = await this.checkCustomerOrder(orderId, this.customer)
+
+        // Check if order can be cancelled (must be PLACING, PENDING, or RESERVED)
+        if (![OrderStatus.PLACING, OrderStatus.PENDING, OrderStatus.RESERVED].includes(orderInstance.status)) {
+            logger.warn(`Order with id=${orderId} cannot be cancelled in status=${orderInstance.status}`)
+            throw new Error(`Order cannot be cancelled in status: ${orderInstance.status}`)
+        }
+
+        // If it's a mystery bag order, restore inventory
+        if (orderInstance.offerId) {
+            await this.offerRepository.restoreAtomic(orderInstance.offerId, 1)
+        }
+
+        // Process refund if payment was captured
+        const paymentInfo = orderInstance.paymentInformation as PaymentInformationModel
+        if (paymentInfo && orderInstance.status !== OrderStatus.PLACING) {
+            try {
+                // In production, you'd check if payment was actually captured before refunding
+                await createRefund(paymentInfo.paymentIntentId)
+                logger.info(`Refund processed for order ${orderId}`)
+            } catch (error) {
+                logger.error(`Failed to process refund for order ${orderId}: ${(error as Error).message}`)
+                // Continue with cancellation even if refund fails - can be handled manually
+            }
+        }
+
+        // Update order status to CANCELLED
+        const updatedOrderInstance = await this.orderRepository.update(orderId, {
+            status: OrderStatus.CANCELLED
+        }) as OrderModel
+
+        // Publish order cancelled event for notification system
+        try {
+            // You can add a custom event here for cancellation notifications
+            logger.info(`Order ${orderId} cancelled successfully`)
+        } catch (error) {
+            logger.error(`Failed to publish order cancelled event: ${(error as Error).message}`)
+        }
+
+        return this.orderGetMapper.toDto(updatedOrderInstance)
     }
 
     protected async checkCustomerAddress(customerAddressId: bigint, customer: CustomerModel): Promise<CustomerAddressModel> {

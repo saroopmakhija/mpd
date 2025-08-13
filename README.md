@@ -1,16 +1,16 @@
-# Food Delivery Backend Service
+# MealPeDeal Backend Service
 
-**Food Delivery** is a huge backend service based on event-driven **Microservice** architecture 
-designed to power a large-scale food delivery platform.
+**MealPeDeal** is a modern backend service based on event-driven **Microservice** architecture 
+designed to power India's premier food waste reduction platform - a Too Good To Go alternative for the Indian market.
 
 
 # Project Description
 
-The **Food Delivery Backend Service** stands as a formidable 
-technological infrastructure, driving the operations of a large-scale 
-food delivery platform. Its event-driven microservice architecture, 
+The **MealPeDeal Backend Service** stands as a cutting-edge 
+technological infrastructure, driving the operations of India's innovative 
+food waste reduction platform. Its event-driven microservice architecture, 
 coupled with a rich feature set, ensures a seamless experience 
-for all stakeholders in the food delivery ecosystem. 
+for restaurants, customers, and the environment by connecting surplus food with conscious consumers. 
 
 
 
@@ -26,19 +26,22 @@ enabling a highly responsive and efficient system.
 
 2. **Scalability and Performance**:
 The service is engineered to meet the demands of a high-traffic 
-food delivery platform. It leverages horizontal scalability, 
-allowing it to handle a large volume of concurrent users, orders, 
-and transactions. This ensures a smooth and uninterrupted experience 
-for customers, restaurants, and delivery partners.
+food waste reduction platform. It leverages horizontal scalability, 
+allowing it to handle a large volume of concurrent users, mystery bag orders, 
+and pickup transactions. This ensures a smooth and uninterrupted experience 
+for customers and restaurant partners.
 
-3. **Comprehensive Feature Set**:
-The Food Delivery Backend Service encompasses a wide array of features essential 
-for the operation of a food delivery platform. 
-This includes user management, restaurant onboarding and management, 
-order processing, delivery logistics, and more. 
-Each feature is meticulously designed to provide a seamless and user-friendly experience.
+3. **Mystery Bag System**:
+MealPeDeal's core feature revolves around "mystery bags" - surprise food packages 
+from restaurants at heavily discounted prices. The system includes real-time inventory management, 
+pickup time slots, reservation systems, and seamless payment processing tailored for the Indian market.
 
-4. **Secure Authentication and Authorization**:
+4. **Indian Market Optimization**:
+Built specifically for the Indian market with UPI/Razorpay payments, 
+multi-language support (Hindi + regional languages), WhatsApp/SMS notifications, 
+INR currency handling, and compliance with Indian data protection laws.
+
+5. **Secure Authentication and Authorization**:
 A robust authentication and authorization system is integrated to 
 safeguard user data and sensitive information. 
 This ensures that only authenticated and authorized users have access 
@@ -48,9 +51,10 @@ to their respective accounts and functionalities within the platform.
 
 Each microservice has its own documentation. You can get acquainted with it further.
 
-1. [User Management Microservice](user-management). This Microservice stands for processes of authentication of users. 
-2. [Menu Microservice](menu). This Microservice takes care of menu-related operations for **Restaurant Managers**.
-3. [Restaurant Microservice](restaurant). This Microservice gives **Restaurant Managers** and **Moderators** ability to work with **Restaurants** data.
+1. [User Management Microservice](user-management). This Microservice handles authentication and user management for customers and restaurant partners.
+2. [Menu Microservice](menu). This Microservice manages mystery bag creation and menu-related operations for **Restaurant Managers**.
+3. [Restaurant Microservice](restaurant). This Microservice gives **Restaurant Managers** and **Moderators** ability to work with **Restaurant** data and pickup configurations.
+4. [Order Microservice](order). This Microservice handles mystery bag reservations, pickup management, and payment processing with Razorpay integration.
 
 # Docker
 
@@ -96,25 +100,22 @@ To run test containers use following command
   docker compose --env-file=../.env -f docker-compose.test.yaml up -d
 ```
 
-# Future Features
+# Core Features (Implemented)
 
-1. **Order Management**. The future roadmap of the service includes an order management system. This is the main functionality of **Food Delivery Service**. 
-It will give **Customers** easy way to make orders. 
-**Couriers** will have an ability to take orders.
-2. **Delivery Management**. To streamline the delivery process, the service will introduce a delivery management system. 
-This system will optimize delivery routes,
-and provide real-time tracking for both customers and delivery partners.
-3. **Reviews and Ratings**. The addition of a reviews and ratings system will enable users to provide 
-feedback on their food and delivery experiences.
-Users can rate **Restaurants**, **Couriers**, and specific **Menu Items**, 
-contributing to an enhanced platform reputation.
-4. **Payment**. Integrate payment when creating **Orders** and **Restaurants**.
-5. **Notifications**. Notifications play a vital role in keeping users informed and engaged. 
-Future plans include a comprehensive notification system that covers order updates, 
-promotions, delivery status, and personalized recommendations.
-6. **Promotions**. To attract and retain users, the service will introduce a promotions engine. 
-This engine will facilitate the creation and management 
-of various promotions, discounts, and loyalty programs. 
+1. **Mystery Bag Management**. Restaurant partners can create surprise bags with surplus food at discounted prices.
+2. **Reservation System**. Customers can browse and reserve mystery bags with specific pickup time slots.
+3. **Pickup Management**. QR code-based pickup verification system for seamless collection.
+4. **Payment Integration**. Complete Razorpay integration supporting UPI, cards, wallets, and net banking.
+5. **Geolocation Services**. Google Maps integration for restaurant discovery and navigation.
+
+# Future Enhancements
+
+1. **Advanced Analytics**. Restaurant dashboard with food waste analytics, revenue insights, and sustainability metrics.
+2. **Reviews and Ratings**. Customer feedback system for mystery bags and restaurant experiences.
+3. **Gamification**. Environmental impact tracking, badges, and rewards for reducing food waste.
+4. **AI Recommendations**. Machine learning-based mystery bag suggestions based on customer preferences.
+5. **Social Features**. Community challenges, sharing food waste reduction achievements, and referral programs.
+6. **Expansion Features**. Multi-city support, franchise management, and white-label solutions. 
 
 
 # License

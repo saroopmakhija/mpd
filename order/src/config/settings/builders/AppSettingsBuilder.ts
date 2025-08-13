@@ -45,8 +45,13 @@ export class AppSettingsBuilder implements ISettingsBuilder {
                     ]
                 }
             ],
-            "bingApiKey": EnvManager.getVariable("GOOGLE_MAPS_API_KEY"),
-            "stripeSecretKey": EnvManager.getVariable("RAZORPAY_KEY_SECRET"),
+            // Google Maps API configuration
+            "googleMapsApiKey": EnvManager.getVariable("GOOGLE_MAPS_API_KEY"),
+            
+            // Razorpay payment gateway configuration
+            "razorpayKeyId": EnvManager.getVariable("RAZORPAY_KEY_ID"),
+            "razorpayKeySecret": EnvManager.getVariable("RAZORPAY_KEY_SECRET"),
+            "razorpayWebhookSecret": EnvManager.getVariable("RAZORPAY_WEBHOOK_SECRET"),
         })
     }
 }
